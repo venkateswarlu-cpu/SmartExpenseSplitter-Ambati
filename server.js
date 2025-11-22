@@ -12,23 +12,20 @@ const PORT = process.env.PORT || 5000
 app.use(cors())
 app.use(express.json())
 
-// MongoDB connection
+// ------------------ MongoDB Connection ------------------
 mongoose.set('strictQuery', true)
 
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => {
-  console.log('MongoDB connected')
-  seedGroups()
-})
-.catch(err => {
-  console.error('MongoDB connection error:', err.message)
-  process.exit(1)
-})
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log('MongoDB connected')
+    seedGroups()
+  })
+  .catch(err => {
+    console.error('MongoDB connection error:', err.message)
+    process.exit(1)
+  })
 
-// Schemas
+// ------------------ Schemas ------------------
 const groupSchema = new mongoose.Schema({
   name: { type: String, unique: true, required: true },
 })
@@ -40,13 +37,13 @@ const expenseSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 })
 
-// Models
+// ------------------ Models ------------------
 const Group = mongoose.model('Group', groupSchema)
 const Expense = mongoose.model('Expense', expenseSchema)
 
-// Seed groups (adds missing groups without deleting existing ones)
+// ------------------ Seed groups ------------------
 const defaultGroups = [
-  'Trip ',
+  'Trip',
   'Household',
   'Outing',
   'Children Fee',
@@ -70,7 +67,7 @@ const seedGroups = async () => {
   }
 }
 
-// Routes
+// ------------------ Routes ------------------
 
 // Get all groups
 app.get('/api/groups', async (req, res) => {
@@ -108,5 +105,17 @@ app.post('/api/expenses', async (req, res) => {
   }
 })
 
-// Start server
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`))
+// ------------------ Start server ------------------
+const server = app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`)
+})
+
+// Handle port in use error
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use. Please free it or change .env PORT.`)
+    process.exit(1)
+  } else {
+    console.error(err)
+  }
+})
